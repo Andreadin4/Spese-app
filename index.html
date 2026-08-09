@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<script>
+  // Pulizia anticipata: se un service worker di una versione precedente di questa app
+  // è rimasto registrato su questo dominio, potrebbe continuare a servire una copia
+  // vecchia della pagina anche quando il file su GitHub è stato aggiornato. Lo rimuoviamo
+  // il prima possibile, e se ne troviamo uno attivo ricarichiamo la pagina una volta sola
+  // per essere sicuri di ripartire dalla versione fresca. Questo NON tocca localStorage,
+  // quindi i dati già registrati restano intatti.
+  (function () {
+    if (!("serviceWorker" in navigator)) return;
+    var SW_CLEANUP_FLAG = "spese-app:sw-cleaned-v1";
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      if (regs.length === 0) return;
+      Promise.all(regs.map(function (r) { return r.unregister(); })).then(function () {
+        if (!sessionStorage.getItem(SW_CLEANUP_FLAG)) {
+          sessionStorage.setItem(SW_CLEANUP_FLAG, "1");
+          location.reload();
+        }
+      });
+    }).catch(function () {});
+  })();
+</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Le mie Spese</title>
@@ -2634,15 +2655,6 @@ root.render(<App />);
       if (loader) loader.classList.add("hidden");
     }, 300);
   });
-
-  // Rimuove eventuali service worker registrati da un tentativo precedente:
-  // un service worker rimasto attivo potrebbe intercettare le richieste future
-  // e interferire con i caricamenti successivi della pagina, anche per contenuto diverso.
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.getRegistrations().then((regs) => {
-      regs.forEach((reg) => reg.unregister());
-    }).catch(() => {});
-  }
 </script>
 
 </body>
