@@ -194,6 +194,7 @@ const Store = makeIcon(<><path d="M3 9l1-5h16l1 5" /><path d="M4 9v11h16V9" /><p
 const ShoppingCart = makeIcon(<><circle cx="9" cy="20" r="1.3" /><circle cx="17" cy="20" r="1.3" /><path d="M2 3h2l2.5 12h11L20 7H6" /></>);
 const Bath = makeIcon(<><path d="M4 12h16v3a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" /><path d="M6 12V6a2 2 0 0 1 2-2c1 0 1.5.5 1.5 1.5" /><path d="M2 12h1M21 12h1M6 20v1M17 20v1" /></>);
 const Bed = makeIcon(<><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6" /><path d="M3 18v2M21 18v2M3 12V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" /></>);
+
 // ---------- Grafici: SVG disegnati a mano, nessuna dipendenza da Recharts ----------
 // Coprono i tre casi usati dall'app: torta, barre (anche multi-serie), linee.
 // Niente libreria esterna: zero rischio che un CDN di terze parti smetta di
@@ -407,7 +408,6 @@ function SimpleLineChart({ data, dataKey, color, height = 240, xKey = "label" })
     </div>
   );
 }
-
 
 // ---------- Palette & costanti ----------
 const INK = "#1C2321";
@@ -687,13 +687,6 @@ function App() {
     await saveTransactions(next);
   }
 
-  async function updateTransaction(id, patch) {
-    const next = transactions.map((t) => (t.id === id ? { ...t, ...patch } : t));
-    setTransactions(next);
-    await saveTransactions(next);
-    showToast("Movimento aggiornato");
-  }
-
   async function updateExpenseCategories(next) {
     setExpenseCategories(next);
     await saveExpenseCategories(next);
@@ -801,7 +794,6 @@ function App() {
             expenseCategories={expenseCategories}
             incomeCategories={incomeCategories}
             onDelete={deleteTransaction}
-            onUpdate={updateTransaction}
           />
         )}
         {tab === "report" && (
@@ -1320,9 +1312,7 @@ function IconPicker({ currentIcon, accentColor, onPick, onClose }) {
 }
 
 // ---------- Tab: Cronologia ----------
-function HistoryView({ transactions, expenseCategories, incomeCategories, onDelete, onUpdate }) {
-  const [editingTx, setEditingTx] = useState(null);
-
+function HistoryView({ transactions, expenseCategories, incomeCategories, onDelete }) {
   const catMap = useMemo(() => {
     const m = {};
     for (const c of expenseCategories) m[`expense:${c.id}`] = c;
@@ -1374,25 +1364,20 @@ function HistoryView({ transactions, expenseCategories, incomeCategories, onDele
                   display: "flex", alignItems: "center", gap: 12, background: "#fff",
                   borderRadius: 14, padding: "12px 14px", marginBottom: 8
                 }}>
-                  <button
-                    onClick={() => setEditingTx(t)}
-                    style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, background: "none", border: "none", textAlign: "left", padding: 0 }}
-                  >
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: `${c.color}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Icon size={17} color={c.color} />
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: `${c.color}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon size={17} color={c.color} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                      {c.label}
+                      {t.recurringId && <Repeat size={11} color="#B8B2A8" />}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
-                        {c.label}
-                        {t.recurringId && <Repeat size={11} color="#B8B2A8" />}
-                      </div>
-                      {t.note && <div style={{ fontSize: 12, color: "#8A8478", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.note}</div>}
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: isIncome ? INCOME_GREEN : EXPENSE_RED, flexShrink: 0 }}>
-                      {isIncome ? "+" : "−"}{formatEUR(t.amount)}
-                    </div>
-                  </button>
-                  <button onClick={() => onDelete(t.id)} style={{ background: "none", border: "none", color: "#C4453A", padding: 4, opacity: 0.6, flexShrink: 0 }}>
+                    {t.note && <div style={{ fontSize: 12, color: "#8A8478", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.note}</div>}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: isIncome ? INCOME_GREEN : EXPENSE_RED }}>
+                    {isIncome ? "+" : "−"}{formatEUR(t.amount)}
+                  </div>
+                  <button onClick={() => onDelete(t.id)} style={{ background: "none", border: "none", color: "#C4453A", padding: 4, opacity: 0.6 }}>
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -1401,166 +1386,11 @@ function HistoryView({ transactions, expenseCategories, incomeCategories, onDele
           </div>
         );
       })}
-
-      {editingTx && (
-        <EditTransactionSheet
-          transaction={editingTx}
-          expenseCategories={expenseCategories}
-          incomeCategories={incomeCategories}
-          onSave={(patch) => { onUpdate(editingTx.id, patch); setEditingTx(null); }}
-          onClose={() => setEditingTx(null)}
-        />
-      )}
     </div>
   );
 }
 
 function EmptyState({ title, subtitle }) {
-  return (
-    <div style={{ textAlign: "center", padding: "60px 20px", color: "#8A8478" }}>
-      <Calendar size={32} style={{ marginBottom: 12, opacity: 0.4 }} />
-      <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, color: INK, marginBottom: 6 }}>{title}</div>
-      <div style={{ fontSize: 13, lineHeight: 1.5 }}>{subtitle}</div>
-    </div>
-  );
-}
-
-function EditTransactionSheet({ transaction, expenseCategories, incomeCategories, onSave, onClose }) {
-  const [type, setType] = useState(transaction.type);
-  const [catId, setCatId] = useState(transaction.categoryId);
-  const [amount, setAmount] = useState(String(transaction.amount));
-  const [note, setNote] = useState(transaction.note || "");
-  const [date, setDate] = useState(new Date(transaction.createdAt).toISOString().slice(0, 10));
-
-  const categories = type === "expense" ? expenseCategories : incomeCategories;
-
-  useEffect(() => {
-    if (!categories.find((c) => c.id === catId)) setCatId(categories[0]?.id || null);
-  }, [type]);
-
-  const accentColor = type === "expense" ? EXPENSE_RED : INCOME_GREEN;
-  const canSave = parseFloat(amount) > 0 && catId && date;
-
-  function submit() {
-    if (!canSave) return;
-    const createdAt = new Date(date + "T12:00:00").getTime();
-    onSave({ type, categoryId: catId, amount: parseFloat(amount), note: note.trim(), createdAt });
-  }
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex",
-        alignItems: "flex-end", zIndex: 100
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: PAPER, width: "100%", maxHeight: "88vh", overflowY: "auto",
-          borderRadius: "20px 20px 0 0", padding: 20
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 20, margin: 0 }}>Modifica movimento</h2>
-          <button onClick={onClose} style={{ background: "#F1EDE6", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Tipo */}
-        <div style={{ display: "flex", background: "#F1EDE6", borderRadius: 14, padding: 4, marginBottom: 14 }}>
-          <button
-            onClick={() => setType("expense")}
-            style={{
-              flex: 1, padding: "9px 0", borderRadius: 11, border: "none",
-              background: type === "expense" ? "#fff" : "transparent",
-              color: type === "expense" ? EXPENSE_RED : "#8A8478", fontWeight: 700, fontSize: 13
-            }}
-          >
-            Uscita
-          </button>
-          <button
-            onClick={() => setType("income")}
-            style={{
-              flex: 1, padding: "9px 0", borderRadius: 11, border: "none",
-              background: type === "income" ? "#fff" : "transparent",
-              color: type === "income" ? INCOME_GREEN : "#8A8478", fontWeight: 700, fontSize: 13
-            }}
-          >
-            Ingresso
-          </button>
-        </div>
-
-        {/* Importo */}
-        <label style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#8A8478" }}>Importo</label>
-        <input
-          type="number"
-          inputMode="decimal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0.00"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E8E2D6", fontSize: 16, margin: "6px 0 14px", background: "#fff" }}
-        />
-
-        {/* Categoria */}
-        <label style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#8A8478" }}>Categoria</label>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, margin: "6px 0 14px" }}>
-          {categories.map((c) => {
-            const Icon = ICONS[c.icon] || MoreHorizontal;
-            const active = catId === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => setCatId(c.id)}
-                style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                  padding: "9px 4px", borderRadius: 12,
-                  border: active ? `2px solid ${c.color}` : "2px solid transparent",
-                  background: active ? `${c.color}1A` : "#F1EDE6",
-                }}
-              >
-                <Icon size={17} color={active ? c.color : "#8A8478"} />
-                <span style={{ fontSize: 10, fontWeight: 600, color: active ? INK : "#8A8478" }}>{c.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Data */}
-        <label style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#8A8478" }}>Data</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          max={new Date().toISOString().slice(0, 10)}
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E8E2D6", fontSize: 14, margin: "6px 0 14px", background: "#fff" }}
-        />
-
-        {/* Nota */}
-        <label style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#8A8478" }}>Nota (facoltativa)</label>
-        <input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Nota"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E8E2D6", fontSize: 16, margin: "6px 0 18px", background: "#fff" }}
-        />
-
-        <button
-          onClick={submit}
-          disabled={!canSave}
-          style={{
-            width: "100%", padding: 14, borderRadius: 14, border: "none",
-            background: canSave ? accentColor : "#D8D2C6", color: "#fff", fontWeight: 700, fontSize: 15
-          }}
-        >
-          Salva modifiche
-        </button>
-      </div>
-    </div>
-  );
-}
   return (
     <div style={{ textAlign: "center", padding: "60px 20px", color: "#8A8478" }}>
       <Calendar size={32} style={{ marginBottom: 12, opacity: 0.4 }} />
@@ -1912,7 +1742,6 @@ function ReportView({ transactions, expenseCategories, incomeCategories }) {
   const [reportMode, setReportMode] = useState("monthly"); // monthly | salary
   const [monthOffset, setMonthOffset] = useState(0);
   const [view, setView] = useState("expense");
-  const [expandedCatId, setExpandedCatId] = useState(null);
 
   const refDate = useMemo(() => {
     const d = new Date();
@@ -1934,10 +1763,6 @@ function ReportView({ transactions, expenseCategories, incomeCategories }) {
 
   const activeList = view === "expense" ? monthExpenses : monthIncomes;
   const activeCatMap = view === "expense" ? catMap : incCatMap;
-
-  useEffect(() => {
-    setExpandedCatId(null);
-  }, [monthKey, view]);
 
   const byCategory = useMemo(() => {
     const m = {};
@@ -2086,46 +1911,14 @@ function ReportView({ transactions, expenseCategories, incomeCategories }) {
           <div style={{ background: "#fff", borderRadius: 16, padding: "8px 8px 4px", marginBottom: 20 }}>
             <SimplePieChart data={byCategory} height={220} />
             <div style={{ padding: "0 12px 12px" }}>
-              {byCategory.map((c) => {
-                const isExpanded = expandedCatId === c.id;
-                const catTransactions = activeList
-                  .filter((t) => t.categoryId === c.id)
-                  .sort((a, b) => b.createdAt - a.createdAt);
-                return (
-                  <div key={c.id}>
-                    <button
-                      onClick={() => setExpandedCatId(isExpanded ? null : c.id)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 8, padding: "8px 0", fontSize: 13,
-                        width: "100%", background: "none", border: "none", textAlign: "left"
-                      }}
-                    >
-                      <div style={{ width: 9, height: 9, borderRadius: 3, background: c.color, flexShrink: 0 }} />
-                      <div style={{ flex: 1, color: INK }}>{c.name}</div>
-                      <div style={{ fontWeight: 700, color: INK }}>{formatEUR(c.value)}</div>
-                      <div style={{ color: "#8A8478", width: 40, textAlign: "right" }}>{Math.round((c.value / total) * 100)}%</div>
-                      <ChevronRight
-                        size={14}
-                        color="#B8B2A8"
-                        style={{ flexShrink: 0, marginLeft: 2, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.15s" }}
-                      />
-                    </button>
-                    {isExpanded && (
-                      <div style={{ paddingLeft: 17, paddingBottom: 8 }}>
-                        {catTransactions.map((t) => (
-                          <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontSize: 12.5, borderTop: "1px solid #F1EDE6" }}>
-                            <div style={{ flex: 1, color: "#8A8478" }}>
-                              {new Date(t.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
-                              {t.note ? ` · ${t.note}` : ""}
-                            </div>
-                            <div style={{ fontWeight: 600, color: INK }}>{formatEUR(t.amount)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {byCategory.map((c) => (
+                <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontSize: 13 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: 3, background: c.color }} />
+                  <div style={{ flex: 1 }}>{c.name}</div>
+                  <div style={{ fontWeight: 700 }}>{formatEUR(c.value)}</div>
+                  <div style={{ color: "#8A8478", width: 40, textAlign: "right" }}>{Math.round((c.value / total) * 100)}%</div>
+                </div>
+              ))}
             </div>
           </div>
 
