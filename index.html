@@ -2,14 +2,6 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8" />
-<!--
-  Content Security Policy esplicita: GitHub Pages (e altri hosting statici) possono
-  applicare un CSP di default restrittivo che blocca eval() e gli script inline.
-  Babel Standalone, che compila il JSX direttamente nel browser, ha bisogno di
-  'unsafe-eval' per funzionare. Dichiariamo qui il permesso esplicitamente,
-  così la pagina funziona indipendentemente dagli header del server che la ospita.
--->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https:; img-src 'self' https: data:; worker-src 'self' blob:;" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Le mie Spese</title>
 <meta name="theme-color" content="#2F6F5E" />
@@ -31,9 +23,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" />
 
 <!-- React, ReactDOM, Babel (per compilare JSX direttamente nel browser) -->
-<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.25.3/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.3/babel.min.js"></script>
 
 <!-- I grafici e le icone sono disegnati con SVG direttamente nel codice dell'app: nessuna libreria esterna di terze parti da qui in poi (Recharts e Lucide sono state sostituite per maggiore affidabilità offline). -->
 
@@ -75,19 +67,12 @@
     if (loader) loader.classList.add("hidden");
     const root = document.getElementById("root");
     if (root && !root.hasChildNodes()) {
-      const details = [
-        "Messaggio: " + (event.message || "n/d"),
-        "File: " + (event.filename || "n/d"),
-        "Riga:colonna: " + (event.lineno || "?") + ":" + (event.colno || "?"),
-        event.error && event.error.stack ? "Stack:\n" + event.error.stack : ""
-      ].filter(Boolean).join("\n");
-
       root.innerHTML =
         '<div style="padding: 32px 20px; font-family: system-ui, sans-serif; color: #1C2321; max-width: 480px; margin: 0 auto;">' +
         '<h2 style="font-size: 18px;">Qualcosa non ha funzionato nel caricamento</h2>' +
         '<p style="font-size: 14px; color: #8A8478; line-height: 1.5;">Controlla di avere connessione internet (serve solo la prima volta) e riprova a ricaricare la pagina. Se il problema persiste, dettaglio tecnico:</p>' +
-        '<pre style="background: #F1EDE6; padding: 12px; border-radius: 8px; font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">' +
-        details.replace(/</g, "&lt;") +
+        '<pre style="background: #F1EDE6; padding: 12px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap;">' +
+        (event.message || "Errore sconosciuto") +
         '</pre></div>';
     }
   });
