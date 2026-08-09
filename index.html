@@ -2,6 +2,14 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8" />
+<!--
+  Content Security Policy esplicita: GitHub Pages (e altri hosting statici) possono
+  applicare un CSP di default restrittivo che blocca eval() e gli script inline.
+  Babel Standalone, che compila il JSX direttamente nel browser, ha bisogno di
+  'unsafe-eval' per funzionare. Dichiariamo qui il permesso esplicitamente,
+  così la pagina funziona indipendentemente dagli header del server che la ospita.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https:; img-src 'self' https: data:; worker-src 'self' blob:;" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Le mie Spese</title>
 <meta name="theme-color" content="#2F6F5E" />
