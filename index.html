@@ -106,7 +106,7 @@
   });
 </script>
 
-<script type="text/babel" data-presets="react">
+<script type="text/plain" id="app-source">
 // ---------- Librerie caricate da CDN come globali UMD ----------
 const { useState, useEffect, useMemo } = React;
 
@@ -2655,6 +2655,62 @@ root.render(<App />);
       if (loader) loader.classList.add("hidden");
     }, 300);
   });
+</script>
+
+<script>
+  // Trasformiamo ed eseguiamo il codice dell'app manualmente, invece di lasciare che
+  // Babel Standalone lo faccia da solo in automatico: così, se qualcosa va storto,
+  // lo cogliamo con un try/catch esplicito che ci dà l'errore vero (messaggio, file,
+  // riga, stack) invece del generico "Script error." che il browser mostra quando
+  // un errore proviene da un contesto che considera opaco.
+  function showFatalError(title, details) {
+    const loader = document.getElementById("boot-loader");
+    if (loader) loader.classList.add("hidden");
+    const root = document.getElementById("root");
+    root.innerHTML =
+      '<div style="padding: 32px 20px; font-family: system-ui, sans-serif; color: #1C2321; max-width: 480px; margin: 0 auto;">' +
+      '<h2 style="font-size: 18px;">' + title + '</h2>' +
+      '<pre style="background: #F1EDE6; padding: 12px; border-radius: 8px; font-size: 11px; overflow-x: auto; white-space: pre-wrap; word-break: break-word;">' +
+      String(details).replace(/</g, "&lt;") +
+      '</pre></div>';
+  }
+
+  try {
+    if (typeof Babel === "undefined") {
+      showFatalError("Babel non si è caricato", "La libreria Babel (per compilare il codice) non risulta disponibile. Possibile problema di rete o CDN bloccato.");
+    } else if (typeof React === "undefined" || typeof ReactDOM === "undefined") {
+      showFatalError("React non si è caricato", "Le librerie React/ReactDOM non risultano disponibili. Possibile problema di rete o CDN bloccato.");
+    } else {
+      const sourceEl = document.getElementById("app-source");
+      const sourceCode = sourceEl.textContent;
+      let compiled;
+      try {
+        compiled = Babel.transform(sourceCode, { presets: ["react"] }).code;
+      } catch (compileErr) {
+        showFatalError(
+          "Errore di compilazione nel codice",
+          "Messaggio: " + compileErr.message + "\n\n" +
+          (compileErr.stack || "")
+        );
+        throw compileErr;
+      }
+      try {
+        (0, eval)(compiled);
+      } catch (runErr) {
+        showFatalError(
+          "Errore durante l'esecuzione",
+          "Messaggio: " + runErr.message + "\n\n" +
+          "Nome: " + runErr.name + "\n\n" +
+          (runErr.stack || "(nessuno stack disponibile)")
+        );
+        throw runErr;
+      }
+    }
+  } catch (outerErr) {
+    // Già mostrato sopra un messaggio specifico; questo blocco evita solo che
+    // l'errore risalga fino a window.onerror e venga appiattito di nuovo.
+    console.error("Errore app:", outerErr);
+  }
 </script>
 
 </body>
